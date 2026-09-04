@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08090d">
+  <meta name="description" content="Generate merged, de-duplicated .gitignore files from 18+ curated stack templates — Node, Python, Unity, Godot, Docker, and more. Fast, private, offline.">
+  <title>Gitignore Generator — Web Utility Suite</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar container">
+    <a class="brand" href="https://github.com/kasapdev/web-utility-suite" aria-label="Back to Web Utility Suite">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <path d="M14 2v6h6M9 15h6M9 11h2"/>
+        </svg>
+      </span>
+      <span class="col" style="gap:0">
+        <span>Gitignore Generator</span>
+        <span class="sub">Web Utility Suite</span>
+      </span>
+    </a>
+    <span class="spacer"></span>
+
+    <span id="statusBadge" class="badge" role="status" aria-live="polite" title="Selected stacks">
+      <span class="status-dot" aria-hidden="true"></span><span id="statusText">0 selected</span>
+    </span>
+
+    <button class="btn btn--icon" data-shortcut-help title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="4" width="20" height="16" rx="2"/>
+        <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"/>
+      </svg>
+    </button>
+    <button class="btn btn--icon" data-theme-toggle title="Toggle theme" aria-label="Toggle theme">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+    </button>
+  </header>
+
+  <main class="container">
+    <!-- Toolbar -->
+    <section class="panel toolbar-panel fade-in" aria-label="Toolbar">
+      <div class="toolbar">
+        <div class="toolbar-group flex-1">
+          <input type="text" id="searchInput" placeholder="Filter stacks…" aria-label="Filter stacks" autocomplete="off">
+        </div>
+        <div class="toolbar-group">
+          <button id="btnSelectAll" class="btn btn--sm" title="Select all stacks">Select all</button>
+          <button id="btnClearAll" class="btn btn--sm btn--ghost" title="Clear all selections">Clear all</button>
+        </div>
+        <span class="spacer hide-sm"></span>
+        <div class="toolbar-group">
+          <button id="btnCopy" class="btn btn--sm" title="Copy .gitignore (Ctrl/Cmd+C)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+          <button id="btnDownload" class="btn btn--sm btn--primary" title="Download .gitignore (Ctrl/Cmd+S)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Download
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Two-pane picker + preview -->
+    <section class="editor rise" aria-label="Stack picker and preview">
+      <!-- Picker pane -->
+      <div class="pane panel pane--picker">
+        <div class="pane-head">
+          <h2 class="pane-title">Stacks &amp; Tools</h2>
+          <span id="pickerStats" class="muted pane-meta mono">0 / 0</span>
+        </div>
+        <div id="stackGroups" class="stack-groups"></div>
+        <div id="noResults" class="empty" hidden>
+          <p>No stacks match your search.</p>
+        </div>
+      </div>
+
+      <!-- Preview pane -->
+      <div class="pane panel pane--output">
+        <div class="pane-head">
+          <h2 class="pane-title">.gitignore Preview</h2>
+          <span id="outputStats" class="muted pane-meta mono">0 lines</span>
+        </div>
+
+        <div class="output-scroll">
+          <pre id="output" class="output-code mono" aria-live="polite" tabindex="0"></pre>
+
+          <!-- Empty state -->
+          <div id="emptyState" class="empty output-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <path d="M14 2v6h6M9 15h6M9 11h2"/>
+            </svg>
+            <p>Select stacks on the left to build your .gitignore.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer container">
+    Part of the <a href="https://github.com/kasapdev/web-utility-suite">Web Utility Suite</a> · MIT Licensed
+  </footer>
+
+  <!-- Shortcuts help modal -->
+  <div id="helpBackdrop" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="row between center" style="margin-bottom:var(--space-4)">
+        <h3 id="helpTitle" style="margin:0">Keyboard shortcuts</h3>
+        <button id="helpClose" class="btn btn--icon btn--ghost" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <table class="shortcut-table">
+        <tbody id="shortcutRows"></tbody>
+      </table>
+      <p class="muted" style="margin:var(--space-4) 0 0;font-size:13px">Tip: <kbd>mod</kbd> means <kbd>Ctrl</kbd> on Windows/Linux and <kbd>⌘</kbd> on macOS.</p>
+    </div>
+  </div>
+
+  <script src="assets/js/core.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
