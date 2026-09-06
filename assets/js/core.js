@@ -162,6 +162,23 @@
     if (key === 'space') key = ' ';
     return pressed === key;
   }
+  /* A mod+C shortcut is conventionally "copy". If the user currently has a
+     text selection on the page, mod+C should perform the browser's native
+     copy-selection instead of being hijacked by an app-level "copy
+     everything" handler (e.g. selecting a snippet inside a preview/output
+     pane and pressing Ctrl/Cmd+C should copy just that snippet). */
+  function isCopyCombo(combo) {
+    var parts = combo.toLowerCase().split('+').map(function (s) { return s.trim(); });
+    var key = parts[parts.length - 1];
+    var hasMod = parts.indexOf('ctrl') > -1 || parts.indexOf('cmd') > -1 || parts.indexOf('mod') > -1;
+    return hasMod && key === 'c';
+  }
+  function hasTextSelection() {
+    try {
+      var sel = window.getSelection();
+      return !!sel && sel.toString().length > 0;
+    } catch (e) { return false; }
+  }
   document.addEventListener('keydown', function (e) {
     var tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
     var typing = tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable);
@@ -170,7 +187,10 @@
       /* Always allow combos that use a modifier; bare keys ignored while typing */
       var usesMod = /ctrl|cmd|mod|alt/.test(s.combo.toLowerCase());
       if (typing && !usesMod) continue;
-      if (comboMatches(e, s.combo)) { e.preventDefault(); s.handler(e); return; }
+      if (comboMatches(e, s.combo)) {
+        if (isCopyCombo(s.combo) && hasTextSelection()) continue; // let the browser copy the selection
+        e.preventDefault(); s.handler(e); return;
+      }
     }
   });
 
